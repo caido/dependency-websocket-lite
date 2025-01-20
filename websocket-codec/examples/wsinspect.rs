@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::{io, result};
 
 use bytes::{Buf, BytesMut};
-use structopt::StructOpt;
+use clap::Parser;
 use tokio_util::codec::Decoder;
 use websocket_codec::protocol::{DataLength, FrameHeader, FrameHeaderCodec};
 use websocket_codec::{Opcode, Result};
@@ -115,18 +115,17 @@ fn inspect(path: &Path, dump_header: bool, dump_data: bool) -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "wsinspect", about = "Inspect WebSocket protocol data")]
+#[derive(Parser, Debug)]
+#[command(name = "wsinspect", about = "Inspect WebSocket protocol data")]
 struct Opt {
     /// Disables display of frame headers
-    #[structopt(long)]
+    #[arg(long)]
     no_dump_header: bool,
 
     /// Displays frame payload data
-    #[structopt(long)]
+    #[arg(long)]
     dump_data: bool,
 
-    #[structopt(parse(from_os_str))]
     files: Vec<PathBuf>,
 }
 
@@ -135,7 +134,7 @@ fn main() {
         files,
         no_dump_header,
         dump_data,
-    } = Opt::from_args();
+    } = Opt::parse();
 
     for path in files {
         if let Err(e) = inspect(&path, !no_dump_header, dump_data) {

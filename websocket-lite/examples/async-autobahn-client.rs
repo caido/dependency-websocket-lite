@@ -7,23 +7,22 @@
 use std::io;
 use std::io::Write;
 
+use clap::Parser;
 use futures_util::sink::SinkExt;
 use futures_util::stream::StreamExt;
-use structopt::StructOpt;
 use url::Url;
 use websocket_lite::{ClientBuilder, Message, Opcode, Result};
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "async-autobahn-client", about = "Client for the Autobahn fuzzing server")]
+#[derive(Parser, Debug)]
+#[command(name = "async-autobahn-client", about = "Client for the Autobahn fuzzing server")]
 struct Opt {
     /// websocket url. ex. <ws://localhost:9001/>
-    #[structopt(parse(try_from_str = Url::parse))]
     ws_url: Url,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let Opt { ws_url } = Opt::from_args();
+    let Opt { ws_url } = Opt::parse();
     let agent = "rust-websocket-lite";
 
     println!("Using fuzzingserver {ws_url}");
