@@ -8,12 +8,17 @@ license = "MIT"
 edition = "2018"
 
 [dependencies]
-hyper = { version = "0.14", default-features = false, features = ["server"] }
+http-body-util = "0.1"
+hyper = { version = "1", default-features = false, features = ["server"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+log = "0.4"
 tokio = { version = "1", default-features = false, features = ["rt"] }
 tokio-util = { version = "0.7", default-features = false, features=["codec"] }
 websocket-codec = { version = "0.5", path = "../websocket-codec" }
 
 [dev-dependencies]
 futures-util = { version = "0.3", default-features = false, features = ["sink"] }
-hyper = { version = "0.14", features=["http1", "server", "tcp"] }
+hyper = { version = "1", features=["http1", "server"] }
+hyper-util = { version = "0.1", features = ["http1", "server"] }
+simplelog = "0.12"
 tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread"] }

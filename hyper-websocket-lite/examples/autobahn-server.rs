@@ -1,18 +1,25 @@
 #![warn(clippy::pedantic)]
 
 use futures_util::{SinkExt, StreamExt};
-use hyper::service::{make_service_fn, service_fn};
-use hyper::Server;
+use hyper::service::service_fn;
+use hyper_util::rt::{TokioExecutor, TokioIo};
+use hyper_util::server::conn::auto;
 use hyper_websocket_lite::{server_upgrade, AsyncClient};
+use log::LevelFilter;
+use simplelog::{Config, SimpleLogger};
+use tokio::{net::TcpListener, task::JoinSet};
 use websocket_codec::{Message, Opcode, Result};
 
 async fn on_client(mut stream_mut: AsyncClient) {
+    log::info!("On client");
+
     let mut stream = loop {
         let (msg, mut stream) = stream_mut.into_future().await;
 
         let msg = match msg {
             Some(Ok(msg)) => msg,
-            Some(Err(_err)) => {
+            Some(Err(err)) => {
+                log::error!("error receiving message: {err}");
                 let _ = stream.send(Message::close()).await;
                 break stream;
             }
@@ -38,11 +45,30 @@ async fn on_client(mut stream_mut: AsyncClient) {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let addr = ([0, 0, 0, 0], 9001).into();
+    SimpleLogger::init(LevelFilter::Info, Config::default())?;
+    let addr = "127.0.0.1:9001";
+    let listener = TcpListener::bind(addr).await?;
 
-    let make_service =
-        make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(|req| server_upgrade(req, on_client))) });
+    let mut join_set = JoinSet::new();
+    loop {
+        let (stream, _addr) = match listener.accept().await {
+            Ok(x) => x,
+            Err(e) => {
+                log::error!("failed to accept connection: {e}");
+                continue;
+            }
+        };
 
-    Server::bind(&addr).serve(make_service).await?;
-    Ok(())
+        let serve_connection = async move {
+            let result = auto::Builder::new(TokioExecutor::new())
+                .serve_connection_with_upgrades(TokioIo::new(stream), service_fn(|req| server_upgrade(req, on_client)))
+                .await;
+
+            if let Err(e) = result {
+                log::error!("error serving: {e}");
+            }
+        };
+
+        join_set.spawn(serve_connection);
+    }
 }

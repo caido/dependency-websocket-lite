@@ -3,9 +3,13 @@
 use std::env;
 
 use futures_util::SinkExt;
-use hyper::service::{make_service_fn, service_fn};
-use hyper::Server;
+use hyper::service::service_fn;
+use hyper_util::rt::{TokioExecutor, TokioIo};
+use hyper_util::server::conn::auto;
 use hyper_websocket_lite::{server_upgrade, AsyncClient};
+use log::LevelFilter;
+use simplelog::{Config, SimpleLogger};
+use tokio::{net::TcpListener, task::JoinSet};
 use websocket_codec::{Message, Result};
 
 async fn on_client(mut client: AsyncClient) {
@@ -15,12 +19,31 @@ async fn on_client(mut client: AsyncClient) {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let port = env::args().nth(1).unwrap_or_else(|| "9001".to_owned()).parse()?;
-    let addr = ([0, 0, 0, 0], port).into();
+    SimpleLogger::init(LevelFilter::Info, Config::default())?;
+    let port = env::args().nth(1).unwrap_or_else(|| "9001".to_owned());
+    let addr = format!("0.0.0.0:{port}");
+    let listener = TcpListener::bind(addr).await?;
 
-    let make_service =
-        make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(|req| server_upgrade(req, on_client))) });
+    let mut join_set = JoinSet::new();
+    loop {
+        let (stream, _addr) = match listener.accept().await {
+            Ok(x) => x,
+            Err(e) => {
+                log::error!("failed to accept connection: {e}");
+                continue;
+            }
+        };
 
-    Server::bind(&addr).serve(make_service).await?;
-    Ok(())
+        let serve_connection = async move {
+            let result = auto::Builder::new(TokioExecutor::new())
+                .serve_connection_with_upgrades(TokioIo::new(stream), service_fn(|req| server_upgrade(req, on_client)))
+                .await;
+
+            if let Err(e) = result {
+                log::error!("error serving: {e}");
+            }
+        };
+
+        join_set.spawn(serve_connection);
+    }
 }
