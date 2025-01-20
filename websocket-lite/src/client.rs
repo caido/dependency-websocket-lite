@@ -2,6 +2,8 @@ use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream as StdTcpStream};
 use std::{fmt, mem, result, str};
 
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
 use futures_util::StreamExt;
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
 use tokio::net::TcpStream as TokioTcpStream;
@@ -40,7 +42,12 @@ fn resolve(url: &Url) -> Result<SocketAddr> {
 
 fn make_key(key: Option<[u8; 16]>, key_base64: &mut [u8; 24]) -> &str {
     let key_bytes = key.unwrap_or_else(rand::random);
-    assert_eq!(24, base64::encode_config_slice(key_bytes, base64::STANDARD, key_base64));
+    assert_eq!(
+        24,
+        BASE64_STANDARD
+            .encode_slice(key_bytes, key_base64)
+            .expect("key output buffer too small")
+    );
 
     str::from_utf8(key_base64).unwrap()
 }
@@ -263,6 +270,8 @@ mod tests {
     use std::task::{Context, Poll};
     use std::{fmt, io, result, str};
 
+    use base64::prelude::BASE64_STANDARD;
+    use base64::Engine;
     use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
     use crate::ClientBuilder;
@@ -347,7 +356,7 @@ mod tests {
         let mut output = Vec::new();
 
         ClientBuilder::new("ws://localhost:8000/stream?query")?
-            .key(&base64::decode(b"dGhlIHNhbXBsZSBub25jZQ==")?)
+            .key(&BASE64_STANDARD.decode(b"dGhlIHNhbXBsZSBub25jZQ==")?)
             .async_connect_on(ReadWritePair(&mut input, &mut output))
             .await
             .unwrap();
@@ -362,7 +371,7 @@ mod tests {
         let mut output = Vec::new();
 
         ClientBuilder::new("ws://localhost:8000/stream?query")?
-            .key(&base64::decode(b"dGhlIHNhbXBsZSBub25jZQ==")?)
+            .key(&BASE64_STANDARD.decode(b"dGhlIHNhbXBsZSBub25jZQ==")?)
             .connect_on(ReadWritePair(&mut input, &mut output))?;
 
         assert_eq!(REQUEST, str::from_utf8(&output)?);
