@@ -18,6 +18,7 @@ a single pair of buffers, which are sized for the longest message seen so far.
 
 This crate provides sync and async, [tokio](https://docs.rs/tokio)-based functionality.
 The `ssl-native-tls`, `ssl-rustls-native-roots` and `ssl-rustls-webpki-roots` feature flags provide the TLS functionality for `wss://...` servers.
+This crate doesn't enable any crypto provider for `rustls` by default.
 
 This crate is fully conformant with the fuzzingserver module in the
 [Autobahn test suite](https://github.com/crossbario/autobahn-testsuite).
