@@ -11,6 +11,8 @@
 extern crate quickcheck_macros;
 
 mod close;
+mod compression;
+mod extensions;
 mod frame;
 mod mask;
 mod message;
