@@ -1,7 +1,6 @@
 #![warn(clippy::pedantic)]
 #![warn(missing_docs)]
 #![allow(clippy::module_name_repetitions)]
-#![cfg_attr(feature = "nightly", feature(test))]
 
 //! A Tokio codec implementation of the WebSocket protocol.
 //!
@@ -10,9 +9,6 @@
 #[cfg(test)]
 #[macro_use]
 extern crate quickcheck_macros;
-
-#[cfg(all(feature = "nightly", test))]
-extern crate test;
 
 mod close;
 mod frame;

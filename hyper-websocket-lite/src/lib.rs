@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic)]
+#![allow(clippy::unused_async)]
 #![warn(missing_docs)]
 
 //! A WebSocket server implementation on hyper and websocket-lite.
@@ -45,7 +46,7 @@ where
                 let client = MessageCodec::server().framed(upgraded);
                 on_client(client).await;
             }
-            Err(e) => eprintln!("upgrade error: {}", e),
+            Err(e) => eprintln!("upgrade error: {e}"),
         }
     });
 

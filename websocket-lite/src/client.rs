@@ -40,10 +40,7 @@ fn resolve(url: &Url) -> Result<SocketAddr> {
 
 fn make_key(key: Option<[u8; 16]>, key_base64: &mut [u8; 24]) -> &str {
     let key_bytes = key.unwrap_or_else(rand::random);
-    assert_eq!(
-        24,
-        base64::encode_config_slice(&key_bytes, base64::STANDARD, key_base64)
-    );
+    assert_eq!(24, base64::encode_config_slice(key_bytes, base64::STANDARD, key_base64));
 
     str::from_utf8(key_base64).unwrap()
 }
@@ -159,7 +156,7 @@ impl ClientBuilder {
     /// This method returns an `Err` result if connecting to the server fails.
     pub fn connect_insecure(self) -> Result<Client<StdTcpStream>> {
         let addr = resolve(&self.url)?;
-        let stream = StdTcpStream::connect(&addr)?;
+        let stream = StdTcpStream::connect(addr)?;
         self.connect_on(stream)
     }
 
@@ -193,7 +190,7 @@ impl ClientBuilder {
     /// This method returns an `Err` result if connecting to the server fails.
     pub fn connect(mut self) -> Result<Client<MaybeTlsStream>> {
         let addr = resolve(&self.url)?;
-        let stream = StdTcpStream::connect(&addr)?;
+        let stream = StdTcpStream::connect(addr)?;
 
         let connector = if let Some(connector) = self.connector.take() {
             connector

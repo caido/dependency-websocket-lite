@@ -4,7 +4,7 @@
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::RefCell;
 
-thread_local!(static BYTES_ALLOCATED: RefCell<usize> = RefCell::new(0));
+thread_local!(static BYTES_ALLOCATED: RefCell<usize> = const { RefCell::new(0) });
 
 fn allocated_bytes(len: usize) {
     BYTES_ALLOCATED.with(|cell| {

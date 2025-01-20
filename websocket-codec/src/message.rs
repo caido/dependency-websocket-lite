@@ -1,5 +1,5 @@
 use std::convert::TryFrom;
-use std::{str, usize};
+use std::str;
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use tokio_util::codec::{Decoder, Encoder};
@@ -222,9 +222,7 @@ impl Decoder for MessageCodec {
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Message>> {
         let mut state = self.interrupted_message.take();
         let (opcode, data) = loop {
-            let (header, header_len) = if let Some(tuple) = FrameHeader::parse_slice(src) {
-                tuple
-            } else {
+            let Some((header, header_len)) = FrameHeader::parse_slice(src) else {
                 // The buffer isn't big enough for the frame header. Reserve additional space for a frame header,
                 // plus reasonable extensions.
                 src.reserve(512);
@@ -244,7 +242,7 @@ impl Decoder for MessageCodec {
                 // On a 64-bit platform we should not reach here as the usize::try_from line above enforces the
                 // max payload length detailed in the RFC of 2^63 bytes.
                 if frame_len > usize::MAX - src.remaining() {
-                    return Err(format!("frame is too long: {0} bytes ({0:x})", frame_len).into());
+                    return Err(format!("frame is too long: {frame_len} bytes ({frame_len:x})").into());
                 }
 
                 // We don't really reserve space for the entire frame data in a single call. If somebody is sending
@@ -269,7 +267,7 @@ impl Decoder for MessageCodec {
             } = header;
 
             if rsv != 0 {
-                return Err(format!("reserved bits are not supported: 0x{:x}", rsv).into());
+                return Err(format!("reserved bits are not supported: 0x{rsv:x}").into());
             }
 
             if let Some(mask) = mask {
@@ -281,11 +279,10 @@ impl Decoder for MessageCodec {
             let opcode = if opcode == 0 {
                 None
             } else {
-                let opcode = Opcode::try_from(opcode).ok_or_else(|| format!("opcode {} is not supported", opcode))?;
+                let opcode = Opcode::try_from(opcode).ok_or_else(|| format!("opcode {opcode} is not supported"))?;
                 if opcode.is_control() && data_len >= 126 {
                     return Err(format!(
-                        "control frames must be shorter than 126 bytes ({} bytes is too long)",
-                        data_len
+                        "control frames must be shorter than 126 bytes ({data_len} bytes is too long)"
                     )
                     .into());
                 }
@@ -300,7 +297,7 @@ impl Decoder for MessageCodec {
                         break (opcode, data);
                     }
 
-                    return Err(format!("continuation frame must have continuation opcode, not {:?}", opcode).into());
+                    return Err(format!("continuation frame must have continuation opcode, not {opcode:?}").into());
                 }
 
                 partial_data.extend_from_slice(&data);
@@ -335,7 +332,7 @@ impl Encoder<Message> for MessageCodec {
     }
 }
 
-impl<'a> Encoder<&'a Message> for MessageCodec {
+impl Encoder<&'_ Message> for MessageCodec {
     type Error = Error;
 
     fn encode(&mut self, item: &Message, dst: &mut BytesMut) -> Result<()> {

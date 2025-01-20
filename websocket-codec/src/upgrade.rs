@@ -22,7 +22,7 @@ fn header<'a, 'header: 'a>(headers: &'a [Header<'header>], name: &'a str) -> res
     let header = headers
         .iter()
         .find(|header| header.name.eq_ignore_ascii_case(name))
-        .ok_or_else(|| format!("server didn't respond with {name} header", name = name))?;
+        .ok_or_else(|| format!("server didn't respond with {name} header"))?;
 
     Ok(header.value)
 }
@@ -38,10 +38,10 @@ fn validate_server_response(expected_ws_accept: &Sha1Digest, data: &[u8]) -> Res
     let response_len = status.unwrap();
     let code = response.code.unwrap();
     if code != 101 {
-        let mut error_message = format!("server responded with HTTP error {code}", code = code);
+        let mut error_message = format!("server responded with HTTP error {code}");
 
         if let Some(reason) = response.reason {
-            write!(error_message, ": {:?}", reason).expect("formatting reason failed");
+            write!(error_message, ": {reason:?}").expect("formatting reason failed");
         }
 
         return Err(error_message.into());
@@ -49,7 +49,7 @@ fn validate_server_response(expected_ws_accept: &Sha1Digest, data: &[u8]) -> Res
 
     let ws_accept_header = header(response.headers, "Sec-WebSocket-Accept")?;
     let mut ws_accept = Sha1Digest::default();
-    base64::decode_config_slice(&ws_accept_header, base64::STANDARD, &mut ws_accept)?;
+    base64::decode_config_slice(ws_accept_header, base64::STANDARD, &mut ws_accept)?;
     if expected_ws_accept != &ws_accept {
         return Err(format!(
             "server responded with incorrect Sec-WebSocket-Accept header: expected {expected}, got {actual}",
@@ -93,7 +93,7 @@ impl ClientRequest {
     where
         F: Fn(&'static str) -> Option<&'a str> + 'a,
     {
-        let header = |name| header(name).ok_or_else(|| format!("client didn't provide {name} header", name = name));
+        let header = |name| header(name).ok_or_else(|| format!("client didn't provide {name} header"));
 
         let check_header = |name, expected| {
             let actual = header(name)?;
@@ -101,10 +101,7 @@ impl ClientRequest {
                 Ok(())
             } else {
                 Err(format!(
-                    "client provided incorrect {name} header: expected {expected}, got {actual}",
-                    name = name,
-                    expected = expected,
-                    actual = actual
+                    "client provided incorrect {name} header: expected {expected}, got {actual}"
                 ))
             }
         };
@@ -116,9 +113,6 @@ impl ClientRequest {
             } else {
                 Err(format!(
                     "client provided incorrect {name} header: expected string containing {expected}, got {actual}",
-                    name = name,
-                    expected = expected,
-                    actual = actual
                 ))
             }
         };
@@ -134,13 +128,13 @@ impl ClientRequest {
 
     /// Copies the value that the client expects to see in the server's `Sec-WebSocket-Accept` header into a `String`.
     pub fn ws_accept_buf(&self, s: &mut String) {
-        base64::encode_config_buf(&self.ws_accept, base64::STANDARD, s);
+        base64::encode_config_buf(self.ws_accept, base64::STANDARD, s);
     }
 
     /// Returns the value that the client expects to see in the server's `Sec-WebSocket-Accept` header.
     #[must_use]
     pub fn ws_accept(&self) -> String {
-        base64::encode_config(&self.ws_accept, base64::STANDARD)
+        base64::encode_config(self.ws_accept, base64::STANDARD)
     }
 }
 

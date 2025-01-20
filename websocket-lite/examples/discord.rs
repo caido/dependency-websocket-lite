@@ -1,5 +1,4 @@
 #![warn(clippy::pedantic)]
-#![allow(clippy::let_underscore_drop)]
 
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;

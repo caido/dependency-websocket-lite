@@ -3,7 +3,6 @@
 //
 // This example code is copyright (c) 2014-2015 Cyderize
 #![warn(clippy::pedantic)]
-#![allow(clippy::let_underscore_drop)]
 
 use std::io;
 use std::io::Write;
@@ -17,7 +16,7 @@ use websocket_lite::{ClientBuilder, Message, Opcode, Result};
 #[derive(Debug, StructOpt)]
 #[structopt(name = "async-autobahn-client", about = "Client for the Autobahn fuzzing server")]
 struct Opt {
-    /// websocket url. ex. ws://localhost:9001/
+    /// websocket url. ex. <ws://localhost:9001/>
     #[structopt(parse(try_from_str = Url::parse))]
     ws_url: Url,
 }
@@ -27,20 +26,15 @@ async fn main() -> Result<()> {
     let Opt { ws_url } = Opt::from_args();
     let agent = "rust-websocket-lite";
 
-    println!("Using fuzzingserver {}", ws_url);
-    println!("Using agent {}", agent);
+    println!("Using fuzzingserver {ws_url}");
+    println!("Using agent {agent}");
 
     let case_count = get_case_count(&ws_url).await?;
-    println!("We will be running {} test cases!", case_count);
+    println!("We will be running {case_count} test cases!");
 
     println!("Running test suite...");
     for case_id in 1..=case_count {
-        let url = format!(
-            "{ws_url}runCase?case={case_id}&agent={agent}",
-            ws_url = ws_url,
-            case_id = case_id,
-            agent = agent
-        );
+        let url = format!("{ws_url}runCase?case={case_id}&agent={agent}",);
 
         let builder = ClientBuilder::new(&url)?;
         let mut stream_mut = builder.async_connect_insecure().await?;
@@ -48,7 +42,7 @@ async fn main() -> Result<()> {
         {
             let stdout = io::stdout();
             let mut stdout = stdout.lock();
-            write!(stdout, "Executing test case: {}/{}\r", case_id, case_count)?;
+            write!(stdout, "Executing test case: {case_id}/{case_count}\r")?;
             stdout.flush()?;
         }
 
@@ -83,7 +77,7 @@ async fn main() -> Result<()> {
 }
 
 async fn get_case_count(ws_url: &Url) -> Result<usize> {
-    let url = format!("{}getCaseCount", ws_url);
+    let url = format!("{ws_url}getCaseCount");
     let builder = ClientBuilder::new(&url)?;
     let s = builder.async_connect_insecure().await?;
     let (msg, _s) = s.into_future().await;
@@ -97,7 +91,7 @@ async fn get_case_count(ws_url: &Url) -> Result<usize> {
 }
 
 async fn update_reports(ws_url: &Url, agent: &str) -> Result<()> {
-    let url = format!("{ws_url}updateReports?agent={agent}", ws_url = ws_url, agent = agent);
+    let url = format!("{ws_url}updateReports?agent={agent}");
     println!("Updating reports...");
 
     let builder = ClientBuilder::new(&url)?;

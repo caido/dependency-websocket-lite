@@ -8,6 +8,9 @@ license = "MIT"
 edition = "2018"
 readme = "../README.md"
 
+[features]
+deflate = []
+
 [dependencies]
 base64 = "0.13"
 byteorder = "1"
@@ -15,10 +18,10 @@ bytes = "1"
 httparse = "1"
 rand = "0.8"
 sha1 = "0.6"
-tokio-util = { version="0.7", default-features = false, features = ["codec"] }
+tokio-util = { version = "0.7", default-features = false, features = ["codec"] }
 
 [dev-dependencies]
-assert-allocations = { path="../assert-allocations" }
+assert-allocations = { path = "../assert-allocations" }
 criterion = "0.3"
 quickcheck = "1"
 quickcheck_macros = "1"

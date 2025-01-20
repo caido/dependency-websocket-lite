@@ -3,7 +3,7 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-use std::{i64, io, result};
+use std::{io, result};
 
 use bytes::{Buf, BytesMut};
 use structopt::StructOpt;
@@ -51,7 +51,7 @@ fn seek_forward<S: Seek>(mut stream: S, bytes: u64) -> result::Result<u64, io::E
 
 fn display(header: &FrameHeader) -> String {
     let opcode = header.opcode();
-    let opcode = Opcode::try_from(opcode).map_or_else(|| opcode.to_string(), |opcode| format!("{:?}", opcode));
+    let opcode = Opcode::try_from(opcode).map_or_else(|| opcode.to_string(), |opcode| format!("{opcode:?}"));
 
     let mask = header
         .mask()
@@ -90,7 +90,7 @@ fn inspect(path: &Path, dump_header: bool, dump_data: bool) -> Result<()> {
             let mut stdout = stdout.lock();
             io::copy(&mut stream, &mut stdout)?
         } else {
-            let prev_pos = stream.seek(SeekFrom::Current(0))?;
+            let prev_pos = stream.stream_position()?;
 
             let pos = seek_forward(&mut stream, data_len)
                 .map(|pos| pos.min(file_len))
@@ -101,8 +101,7 @@ fn inspect(path: &Path, dump_header: bool, dump_data: bool) -> Result<()> {
 
         if actual_data_len != data_len {
             return Err(format!(
-                "stream contains incomplete data: expected {0} bytes (0x{0:x} bytes), got {1} bytes (0x{1:x} bytes)",
-                data_len, actual_data_len
+                "stream contains incomplete data: expected {data_len} bytes (0x{data_len:x} bytes), got {actual_data_len} bytes (0x{actual_data_len:x} bytes)"
             )
             .into());
         }

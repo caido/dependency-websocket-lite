@@ -1,5 +1,5 @@
 use std::convert::TryFrom;
-use std::{mem, usize};
+use std::mem;
 
 use byteorder::{BigEndian, ByteOrder, NativeEndian};
 use bytes::BytesMut;
@@ -41,21 +41,21 @@ impl TryFrom<DataLength> for u64 {
             DataLength::Small(n) => Ok(u64::from(n)),
             DataLength::Medium(n) => {
                 if n <= 125 {
-                    return Err(format!("payload length {} should not be represented using 16 bits", n).into());
+                    return Err(format!("payload length {n} should not be represented using 16 bits").into());
                 }
 
                 Ok(u64::from(n))
             }
             DataLength::Large(n) => {
                 if n <= 65535 {
-                    return Err(format!("payload length {} should not be represented using 64 bits", n).into());
+                    return Err(format!("payload length {n} should not be represented using 64 bits").into());
                 }
 
                 if n >= 0x8000_0000_0000_0000 {
-                    return Err(format!("frame is too long: {} bytes ({:x})", n, n).into());
+                    return Err(format!("frame is too long: {n} bytes ({n:x})").into());
                 }
 
-                Ok(n as u64)
+                Ok(n)
             }
         }
     }
