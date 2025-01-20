@@ -6,18 +6,18 @@ use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use bytes::{Buf, BytesMut};
 use httparse::{Header, Response};
-use sha1::Sha1;
+use sha1::{Digest, Sha1};
 use tokio_util::codec::{Decoder, Encoder};
 
 use crate::{Error, Result};
 
-type Sha1Digest = [u8; sha1::DIGEST_LENGTH];
+type Sha1Digest = [u8; 20];
 
 fn build_ws_accept(key: &str) -> Sha1Digest {
     let mut s = Sha1::new();
     s.update(key.as_bytes());
     s.update(b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-    s.digest().bytes()
+    s.finalize().into()
 }
 
 fn header<'a, 'header: 'a>(headers: &'a [Header<'header>], name: &'a str) -> result::Result<&'header [u8], String> {
